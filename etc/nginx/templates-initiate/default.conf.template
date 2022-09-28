@@ -7,3 +7,12 @@ server {
         root /var/www/certbot;
     }
 }
+server {
+    listen [::]:80;
+    listen 80;
+    server_name $KIBANA_DOMAIN;
+    location ~/.well-known/acme-challenge {
+        allow all;
+        root /var/www/certbot;
+    }
+}

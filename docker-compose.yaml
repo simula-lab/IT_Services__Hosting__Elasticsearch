@@ -64,6 +64,7 @@ services:
       retries: 120
 
   es01:
+    restart: unless-stopped
     depends_on:
       setup:
         condition: service_healthy
@@ -108,6 +109,7 @@ services:
       retries: 120
 
   es02:
+    restart: unless-stopped
     depends_on:
       - es01
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
@@ -148,6 +150,7 @@ services:
       retries: 120
 
   es03:
+    restart: unless-stopped
     depends_on:
       - es02
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
@@ -188,6 +191,7 @@ services:
       retries: 120
 
   kibana:
+    restart: unless-stopped
     depends_on:
       es01:
         condition: service_healthy
@@ -203,7 +207,7 @@ services:
       - ${KIBANA_PORT}
     environment:
       - SERVERNAME=kibana
-      - SERVER_PUBLICBASEURL=https://${DOMAIN}
+      - SERVER_PUBLICBASEURL=https://${KIBANA_DOMAIN}
       - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
@@ -225,8 +229,9 @@ services:
     restart: unless-stopped
     environment:
       - DOMAIN
-    depends_on:
-      - kibana 
+      - KIBANA_DOMAIN
+#    depends_on:
+#      - kibana 
     ports:
       - 80:80
       - 443:443
@@ -240,10 +245,9 @@ services:
     image: certbot/certbot:latest
     depends_on:
       - nginx
-    command: >-
-             certonly --reinstall --webroot --webroot-path=/var/www/certbot
-             --email ${EMAIL} --agree-tos --no-eff-email
-             -d ${DOMAIN}
+    entrypoint: /bin/sh
+    command: >
+      'certbot certonly --reinstall --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN}; certbot certonly --reinstall --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${KIBANA_DOMAIN};'
     volumes:
       - ./etc/letsencrypt:/etc/letsencrypt
       - ./certbot/data:/var/www/certbot

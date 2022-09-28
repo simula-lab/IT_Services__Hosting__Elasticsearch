@@ -5,6 +5,7 @@ services:
     image: nginx:latest
     environment:
       - DOMAIN
+      - KIBANA_DOMAIN
     ports:
       - 80:80
     volumes:
@@ -16,10 +17,9 @@ services:
     image: certbot/certbot:latest
     depends_on:
       - nginx
-    command: >- 
-             certonly --reinstall --webroot --webroot-path=/var/www/certbot
-             --email ${EMAIL} --agree-tos --no-eff-email
-             -d ${DOMAIN}
+    entrypoint: /bin/sh -c
+    command: > 
+      'certbot certonly --reinstall --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN}; certbot certonly --reinstall --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${KIBANA_DOMAIN};'
     volumes:
       - ./etc/letsencrypt:/etc/letsencrypt
       - ./certbot/data:/var/www/certbot
